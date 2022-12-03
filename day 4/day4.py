@@ -1,6 +1,5 @@
 # https://adventofcode.com/2022/day/4
 import os
-from unittest import result
 
 def solve1(lines):
     result=0
