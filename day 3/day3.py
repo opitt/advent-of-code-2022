@@ -2,6 +2,10 @@
 import os
 from string import ascii_letters
 
+from rich import print
+from rich.console import Console
+from rich.table import Table
+
 def solve1(bags):
     
     def get_duplicate(bag):
@@ -17,10 +21,38 @@ def solve1(bags):
         l=len(bag)
         return (set(bag[:l//2]) & set(bag[l//2:])).pop()
 
-    priority=0
+    def visualize_bags(rows):
+        table = Table(title="Elf bags")
+        table.add_column("bag", justify="right", style="black", no_wrap=True)
+        table.add_column(">1", justify="right", style="red bold")
+        table.add_column("prio", justify="right", style="bright_green")
+        table.add_column("compartment 1", justify="right", style="grey100")
+        table.add_column("compartment 2", justify="left", style="grey100")
+        console = Console(record=True)
+
+        for i, r in enumerate(rows[:-1], start=1):
+            item, item_prio, bag  = r[0], r[1], r[2]
+            l = len(bag)
+            c1 = bag[:l//2].replace(item,f"[red bold]{item}[/red bold]")
+            c2 = bag[l//2:].replace(item,f"[red bold]{item}[/red bold]")
+            table.add_row(f"{i}", f"{item}", f"{item_prio}", c1, c2)
+        table.add_section()
+        table.add_row(f"", f"", f"{rows[-1][1]}", "", "")
+        
+        console.print(table)
+    
+    rows_vis = []
+    priority = 0
     for b in bags:
-        item=get_duplicate(b)
-        priority += ascii_letters.index(item)+1
+        item = get_duplicate(b)
+        item_prio = ascii_letters.index(item)+1
+        priority += item_prio
+
+        rows_vis.append((item, item_prio, b)) # remember for visual representation of bags 
+
+    rows_vis.append(("", priority, ""))  # remember total priority as last row for visual representation of bags
+    visualize_bags(rows_vis)
+
     print(
         f"The sum of priorities of duplicate items per bag is {priority}"
     )
