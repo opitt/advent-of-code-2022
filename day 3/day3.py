@@ -5,6 +5,15 @@ from string import ascii_letters
 def solve1(bags):
     
     def get_duplicate(bag):
+        """Finds the single duplicate item in the 2 compartments of a bag.
+        The compartments are first half and second half of the bag (string).
+
+        Args:
+            bag (str): items in the bag
+
+        Returns:
+            str: the single duplicate item among the compartments
+        """
         l=len(bag)
         return (set(bag[:l//2]) & set(bag[l//2:])).pop()
 
