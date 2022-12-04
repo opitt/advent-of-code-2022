@@ -1,6 +1,11 @@
 # https://adventofcode.com/2022/day/4
 import os
 
+from rich import print
+from rich.table import Table
+from rich.live import Live
+from time import sleep
+
 def solve1(lines):
     """Count pairs with fully overlapping sectors
 
@@ -39,7 +44,51 @@ def solve2(lines):
         f"Part 2 ... is {len(lines)-result}"
     )    
     return result
-    
+
+def visualize_sectors(lines):
+
+    def generate_table(lines) -> Table:
+        """Generate new table to visualise the sectores
+
+        Args:
+            lines (list): list of tuples containing team and sectors
+
+        Returns:
+            Table: renderable
+        """
+        table = Table()
+        table.add_column("Team", justify="right")
+        table.add_column("Sector cleaning", justify="center")
+
+        EMPTY = " "
+        CLEANING = f"[bold green]-[/bold green]"
+        OVERLAP  = f"[red bold]=[/red bold]"
+
+        for line in lines:
+            sector = [EMPTY]*100
+            elf1_sector, elf2_sector = [list(map(int,sector.split("-"))) for sector in line[1].split(",")]
+            for s in range(elf1_sector[0], elf1_sector[1]+1):
+                sector[s] = CLEANING
+            for s in range(elf2_sector[0], elf2_sector[1]+1):
+                sector[s] = CLEANING if sector[s]==EMPTY else OVERLAP
+            sector = "".join(sector[1:])
+
+            team = f"{line[0]:03}"
+            if OVERLAP not in sector:    team = f"{team}" 
+            elif CLEANING not in sector: team = f"[bold white on red]{team}"
+            else: team = f"[red]{team}"
+            
+            table.add_row(
+                    f"{team}", f"{sector}"
+            )
+        return table
+
+    SHOW_LINES = 30
+    with Live(generate_table(lines[:SHOW_LINES]), refresh_per_second=4) as live:
+        for l in range(0,len(lines)-SHOW_LINES):
+            sleep(0.1)
+            live.update(generate_table(lines[l:l+SHOW_LINES]))
+
 def main(test):
 
     # READ INPUT FILE
@@ -52,6 +101,8 @@ def main(test):
 
     # PART 2
     solve2(lines) # == 900
+
+    visualize_sectors([(i,line) for i, line in enumerate(lines)])
 
 #main(test=True)
 main(test=False)
