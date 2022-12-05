@@ -24,16 +24,7 @@ def solve2(stacks, commands):
     print(f"solution 2: {res}")
     return res
 
-
-def main(test):
-
-    # READ INPUT FILE
-    script_path = os.path.dirname(os.path.realpath(__file__))
-    with open(
-        os.path.join(script_path, "test.txt" if test else "input.txt"), encoding="utf-8"
-    ) as input:
-        lines = input.read().rstrip().split("\n")
-
+def parse_input(lines):
     #    [D]
     # [N] [C]
     # [Z] [M] [P]
@@ -51,6 +42,18 @@ def main(test):
         tuple(map(int, re.findall("[0-9]+", command_line)))
         for command_line in lines[height + 1 + 1 :]
     ]
+    return stacks, commands
+
+def main(test):
+
+    # READ INPUT FILE
+    script_path = os.path.dirname(os.path.realpath(__file__))
+    with open(
+        os.path.join(script_path, "test.txt" if test else "input.txt"), encoding="utf-8"
+    ) as input:
+        lines = input.read().rstrip().split("\n")
+
+    stacks, commands = parse_input(lines)
 
     # PART 1
     
