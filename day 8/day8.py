@@ -1,20 +1,13 @@
 # https://adventofcode.com/2022/day/8
+from itertools import takewhile
 import os
 from rich import print
 from copy import deepcopy
 
 
 def solve1(trees):
-    """
-    30373
-    25512
-    65332
-    33549
-    35390
-    """
 
     def is_visible(trees, heigth):
-        # return all([h < heigth for h in trees])
         return max(trees) < heigth
 
     tree_cols = [list(t) for t in zip(*trees)]
@@ -36,6 +29,35 @@ def solve1(trees):
     return res
 
 
+def solve2(trees):
+
+    def viewing_distance(trees, heigth):
+        # function will not receive the edge trees (distance = 0)
+        dist = 0
+        for h in trees:
+            dist += 1
+            if h >= heigth:
+                break
+        return dist
+
+    tree_cols = [list(t) for t in zip(*trees)]
+    forrest_h, forrest_w = len(tree_cols), len(trees)
+    res = 0
+
+    for x in range(1, forrest_w - 1):
+        for y in range(1, forrest_h - 1):
+            h = trees[y][x]
+            dist = 1
+            dist *= viewing_distance(trees[y][:x][::-1], h)  # look left
+            dist *= viewing_distance(trees[y][x + 1 :], h)  # look right
+            dist *= viewing_distance(tree_cols[x][:y][::-1], h)  # look down
+            dist *= viewing_distance(tree_cols[x][y + 1 :], h)  # look up
+            res = max(res, dist)
+
+    print(f"Solution 2 ... {res}")
+    return res
+
+
 def main(test):
 
     print("****", "TEST" if test else "INPUT", "****************")
@@ -52,8 +74,8 @@ def main(test):
     solve1(lines)
 
     # PART 2
-    # solve2(lines)
+    solve2(lines)
 
 
-main(test=True)  #
-main(test=False)  # 1581595, 1544176
+main(test=True)  # 21, 8
+main(test=False)  # 1695, 287040
