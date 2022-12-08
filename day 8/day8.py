@@ -1,27 +1,23 @@
 # https://adventofcode.com/2022/day/8
-from itertools import takewhile
 import os
 from rich import print
-from copy import deepcopy
-
 
 def solve1(trees):
 
     def is_visible(trees, heigth):
         return max(trees) < heigth
 
-    tree_cols = [list(t) for t in zip(*trees)]
-    forrest_h, forrest_w = len(tree_cols), len(trees)
+    forrest_h, forrest_w = len(trees), len(trees[0])
     res = 2 * (forrest_h - 1) + 2 * (forrest_w - 1)
 
     for x in range(1, forrest_w - 1):
         for y in range(1, forrest_h - 1):
             h = trees[y][x]
             if (
-                is_visible(tree_cols[x][:y], h)
-                or is_visible(tree_cols[x][y + 1 :], h)
-                or is_visible(trees[y][:x], h)
-                or is_visible(trees[y][x + 1 :], h)
+                is_visible([row[x] for row in trees[:y]][::-1], h)  #up
+                or is_visible([row[x] for row in trees[y + 1:]], h) #down
+                or is_visible(trees[y][:x], h) #left
+                or is_visible(trees[y][x + 1:], h) #right
             ):
                 res += 1
 
@@ -40,8 +36,7 @@ def solve2(trees):
                 break
         return dist
 
-    tree_cols = [list(t) for t in zip(*trees)]
-    forrest_h, forrest_w = len(tree_cols), len(trees)
+    forrest_h, forrest_w = len(trees), len(trees[0])
     res = 0
 
     for x in range(1, forrest_w - 1):
@@ -49,9 +44,9 @@ def solve2(trees):
             h = trees[y][x]
             dist = 1
             dist *= viewing_distance(trees[y][:x][::-1], h)  # look left
-            dist *= viewing_distance(trees[y][x + 1 :], h)  # look right
-            dist *= viewing_distance(tree_cols[x][:y][::-1], h)  # look down
-            dist *= viewing_distance(tree_cols[x][y + 1 :], h)  # look up
+            dist *= viewing_distance(trees[y][x + 1:], h)  # look right
+            dist *= viewing_distance([row[x] for row in trees[y+1:]], h)  # look down
+            dist *= viewing_distance([row[x] for row in trees[:y]][::-1], h)  # look up
             res = max(res, dist)
 
     print(f"Solution 2 ... {res}")
