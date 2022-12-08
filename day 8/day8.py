@@ -14,7 +14,7 @@ def solve1(trees):
         for y in range(1, forrest_h - 1):
             h = trees[y][x]
             if (
-                is_visible([row[x] for row in trees[:y]][::-1], h)  #up
+                   is_visible([row[x] for row in trees[:y]][::-1], h)  #up
                 or is_visible([row[x] for row in trees[y + 1:]], h) #down
                 or is_visible(trees[y][:x], h) #left
                 or is_visible(trees[y][x + 1:], h) #right
@@ -28,6 +28,8 @@ def solve1(trees):
 def solve2(trees):
 
     def viewing_distance(trees, heigth):
+        # receive a list of tree heights, AS SEEN FROM the tree with HEIGHT
+        # 5: 1 2 5 4 [2] !!!
         # function will not receive the edge trees (distance = 0)
         dist = 0
         for h in trees:
@@ -38,7 +40,6 @@ def solve2(trees):
 
     forrest_h, forrest_w = len(trees), len(trees[0])
     res = 0
-
     for x in range(1, forrest_w - 1):
         for y in range(1, forrest_h - 1):
             h = trees[y][x]
