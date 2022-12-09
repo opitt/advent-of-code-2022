@@ -9,8 +9,8 @@ def solve1(cmds):
 
     def move_head(cmd, h):
         D = {"R": (0, 1), "L": (0, -1), "D": (1, 0), "U": (-1, 0)}
-        h[Y] += D[cmd][X]
-        h[X] += D[cmd][Y]
+        h[Y] += D[cmd][Y]
+        h[X] += D[cmd][X]
 
     def follow_knot(h, t):
         dist = math.dist(h, t)
@@ -78,5 +78,5 @@ def main(test):
     solve1(lines)
 
 
-# main(test=True)    # 13, 1
+main(test=True)    # 13, 1
 main(test=False)  # 6044, 2384
