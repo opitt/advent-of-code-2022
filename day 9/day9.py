@@ -5,49 +5,51 @@ from rich import print
 
 
 def solve1(cmds):
-    res = 0
-    h = [0, 0]  # [y, x]
-    t = [0, 0]  # [y, x]
-    t_trail = {tuple(t)}
+    Y, X = 0, 1
 
-    def move1(cmd, h, t, trail):
-        Y, X = 0, 1
+    def move_head(cmd, h):
         D = {"R": (0, 1), "L": (0, -1), "D": (1, 0), "U": (-1, 0)}
-        DX = D[cmd][X]
-        DY = D[cmd][Y]
-        # move head
-        h[Y] += DY
-        h[X] += DX
+        h[Y] += D[cmd][X]
+        h[X] += D[cmd][Y]
+
+    def follow_h(h, t):
         # calculate distance to tail
         dist = math.dist(t, h)
-
         if dist > 1:
             if t[Y] == h[Y]:  # same row (head and tail have same y)
-                t[X] += DX
+                t[X] += -1 if h[X] < t[X] else 1
             elif t[X] == h[X]:  # same column (head and tail have same x)
-                t[Y] += DY
+                t[Y] += -1 if h[Y] < t[Y] else 1
             elif dist < 1.5:  # touching, diagonal
                 pass
             else:
                 t[Y] += -1 if h[Y] < t[Y] else 1
                 t[X] += -1 if h[X] < t[X] else 1
-
-        trail.add(tuple(t))
-
+        
+    # PART 1
+    h, t = [0, 0], [0, 0]  # [y, x]
+    t_trail = {tuple(t)}
     for cmd in cmds:
         for _ in range(cmd[1]):
-            move1(cmd[0], h, t, t_trail)
-
+            move_head(cmd[0], h)
+            follow_h(h, t)
+            t_trail.add(tuple(t))
     res = len(t_trail)
     print(f"Solution 1 ... {res}")
-    return res
 
+    # PART 2
+    knots = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]   # [h[y, x], ... t[]]
+    t_trail = {tuple(knots[-1])}
+    for cmd in cmds:
+        for _ in range(cmd[1]):
+            move_head(cmd[0], knots[0])
+            for k1, k2 in zip(knots[:-1],knots[1:]):
+                follow_h(k1, k2)
+            t_trail.add(tuple(knots[-1]))
 
-def solve2(cmds):
-    res = 0
-
+    res = len(t_trail)
     print(f"Solution 2 ... {res}")
-    return res
+
 
 
 def main(test):
@@ -62,12 +64,9 @@ def main(test):
 
     lines = [(line.split()[0], int(line.split()[1])) for line in lines]
 
-    # PART 1
+    # PART 1 and 2
     solve1(lines)
 
-    # PART 2
-    solve2(lines)
 
-
-# main(test=True)    #
-main(test=False)  #
+# main(test=True)    # 13, 1
+main(test=False)  # 6044, 2384
