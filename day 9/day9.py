@@ -12,44 +12,54 @@ def solve1(cmds):
         h[Y] += D[cmd][X]
         h[X] += D[cmd][Y]
 
-    def follow_h(h, t):
-        # calculate distance to tail
-        dist = math.dist(t, h)
+    def follow_knot(h, t):
+        dist = math.dist(h, t)
         if dist > 1:
+            DX = -1 if h[X] < t[X] else 1
+            DY = -1 if h[Y] < t[Y] else 1
             if t[Y] == h[Y]:  # same row (head and tail have same y)
-                t[X] += -1 if h[X] < t[X] else 1
+                t[X] += DX
             elif t[X] == h[X]:  # same column (head and tail have same x)
-                t[Y] += -1 if h[Y] < t[Y] else 1
-            elif dist < 1.5:  # touching, diagonal
-                pass
-            else:
-                t[Y] += -1 if h[Y] < t[Y] else 1
-                t[X] += -1 if h[X] < t[X] else 1
-        
+                t[Y] += DY
+            elif dist > 1.5:  # need to catch up with the head
+                t[Y] += DY
+                t[X] += DX
+
+    def solution(cmds, knots):
+        tail_trail = {tuple(knots[-1])}
+        for cmd in cmds:
+            c,n = cmd
+            for _ in range(n):
+                move_head(c, knots[0])
+                for k1, k2 in zip(knots[:-1], knots[1:]):
+                    follow_knot(k1, k2)
+                tail_trail.add(tuple(knots[-1]))
+        res = len(tail_trail)
+        return res
+
     # PART 1
-    h, t = [0, 0], [0, 0]  # [y, x]
-    t_trail = {tuple(t)}
-    for cmd in cmds:
-        for _ in range(cmd[1]):
-            move_head(cmd[0], h)
-            follow_h(h, t)
-            t_trail.add(tuple(t))
-    res = len(t_trail)
+    knots = [
+        [0, 0],
+        [0, 0],
+    ]  # [h[y, x], ... t[]]
+    res = solution(cmds, knots) 
     print(f"Solution 1 ... {res}")
 
     # PART 2
-    knots = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]   # [h[y, x], ... t[]]
-    t_trail = {tuple(knots[-1])}
-    for cmd in cmds:
-        for _ in range(cmd[1]):
-            move_head(cmd[0], knots[0])
-            for k1, k2 in zip(knots[:-1],knots[1:]):
-                follow_h(k1, k2)
-            t_trail.add(tuple(knots[-1]))
-
-    res = len(t_trail)
+    knots = [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+    ]  # [h[y, x], ... t[]]
+    res = solution(cmds, knots) 
     print(f"Solution 2 ... {res}")
-
 
 
 def main(test):
