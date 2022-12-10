@@ -2,15 +2,25 @@
 import os
 from rich import print
 
+def nextCommand(cmds):
+    NOOP_CYCLES = 1
+    ADDX_CYCLES = 2
+    cmd, cmd_n = cmds.pop(0), 0
+    if cmd.startswith("addx"):
+        cmd, cmd_n = cmd.split()
+    return cmd, int(cmd_n), NOOP_CYCLES if cmd == "noop" else ADDX_CYCLES
+
+def draw_crt(crt):
+    fg = "green"
+    bg = "grey3"
+    for row in range(0, len(crt), 40):
+        crt_line = crt[row : row + 40]
+        crt_line = crt_line.replace("#", f"[{fg} on {bg}]#[/{fg} on {bg}]")
+        crt_line = crt_line.replace(".", f"[{fg} on {bg}] [/{fg} on {bg}]")
+        print(crt_line)
+
 
 def solve(cmds):
-    def nextCommand(cmds):
-        NOOP_CYCLES = 1
-        ADDX_CYCLES = 2
-        cmd, cmd_n = cmds.pop(0), 0
-        if cmd.startswith("addx"):
-            cmd, cmd_n = cmd.split()
-        return cmd, int(cmd_n), NOOP_CYCLES if cmd == "noop" else ADDX_CYCLES
 
     cycle, x = 0, 1
     cmd, cmd_n, cmd_cycle = nextCommand(cmds)
@@ -27,34 +37,14 @@ def solve(cmds):
 
     res = sum(cycle_sig[cycle] for cycle in (20, 60, 100, 140, 180, 220))
     print(f"Solution 1 ... sum of signal strengths: {res}")
-    print(
-        *[
-            f"cycle: {cycle:>3} signal: {cycle_sig[cycle]:>5}"
-            for cycle in (20, 60, 100, 140, 180, 220)
-        ],
-        sep="\n",
-    )
 
     # PART 2
-    def draw_crt(crt):
-        fg = "green"
-        bg = "grey3"
-        for row in range(0, len(crt), 40):
-            crt_line = crt[row : row + 40]
-            crt_line = crt_line.replace("#", f"[{fg} on {bg}]#[/{fg} on {bg}]")
-            crt_line = crt_line.replace(".", f"[{fg} on {bg}] [/{fg} on {bg}]")
-            print(crt_line)
-
-    # the CRT draws a single pixel during each cycle
-    # If the sprite is positioned such that one of its three pixels is the pixel
-    # currently being drawn, the screen produces a lit pixel (#);
-    # otherwise, the screen leaves the pixel dark (.).
     crt = ""
     for cycle, x in enumerate(cycle_x):
         crt_pos = cycle % 40  # one crt row: 0-39
         crt += "#" if crt_pos in (x - 1, x, x + 1) else "."
 
-    print(f"Solution 2 ... [red on grey3]read the screen[/red on grey3]")
+    print(f"Solution 2 ... read the screen")
     draw_crt(crt)
 
 
