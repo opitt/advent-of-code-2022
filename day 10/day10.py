@@ -1,55 +1,61 @@
 # https://adventofcode.com/2022/day/10
-import math
 import os
 from rich import print
 
 
-def solve1(cmds):
-    # Find the signal strength during the 20th, 60th, 100th, 140th, 180th, and 220th cycles.
-    # What is the sum of these six signal strengths?
-
+def solve(cmds):
     def nextCommand(cmds):
+        NOOP_CYCLES = 1
+        ADDX_CYCLES = 2
         cmd, cmd_n = cmds.pop(0), 0
         if cmd.startswith("addx"):
             cmd, cmd_n = cmd.split()
-        return cmd, int(cmd_n), 1 if cmd == "noop" else 2
+        return cmd, int(cmd_n), NOOP_CYCLES if cmd == "noop" else ADDX_CYCLES
 
-    # noop
-    # addx 3
-    # addx -5
-
-    cycle = 0
+    cycle, x = 0, 1
     cmd, cmd_n, cmd_cycle = nextCommand(cmds)
-    X = 1
-    signal_strength = [0]
+    cycle_sig, cycle_x = [0], []
     while cmds:
-        cycle += 1
-        # next command
-        if cmd_cycle == 0:
+        cycle += 1  # cycle begins
+        if cmd_cycle == 0:  # when command finished
             cmd, cmd_n, cmd_cycle = nextCommand(cmds)
-        # cycle begins
-        # do the command
-        cmd_cycle -= 1
-        # signal strength during the cycle
-        signal = X * cycle
-        if cmd_cycle == 0:
-            if cmd == "noop":
-                pass
-            elif cmd == "addx":
-                X += cmd_n
-        print(f"{cycle=}, {signal=}, [{cmd_cycle}] {cmd} {cmd_n}, {X=}")
-        signal_strength.append(signal)
-        # end cycle
+        cmd_cycle -= 1  # do the command
+        cycle_sig.append(x * cycle)  # signal strength during the cycle
+        cycle_x.append(x)
+        if cmd_cycle == 0 and cmd == "addx":
+            x += cmd_n
 
-    res = 0
-    for cycle in (20, 60, 100, 140, 180, 220):
-        print(signal_strength[cycle])
-        res += signal_strength[cycle]
-    print(f"Solution 1 ... {res}")
+    res = sum(cycle_sig[cycle] for cycle in (20, 60, 100, 140, 180, 220))
+    print(f"Solution 1 ... sum of signal strengths: {res}")
+    print(
+        *[
+            f"cycle: {cycle:>3} signal: {cycle_sig[cycle]:>5}"
+            for cycle in (20, 60, 100, 140, 180, 220)
+        ],
+        sep="\n",
+    )
 
     # PART 2
-    # res = solution(cmds, knots)
-    print(f"Solution 2 ... {res}")
+    def draw_crt(crt):
+        fg = "green"
+        bg = "grey3"
+        for row in range(0, len(crt), 40):
+            crt_line = crt[row : row + 40]
+            crt_line = crt_line.replace("#", f"[{fg} on {bg}]#[/{fg} on {bg}]")
+            crt_line = crt_line.replace(".", f"[{fg} on {bg}] [/{fg} on {bg}]")
+            print(crt_line)
+
+    # the CRT draws a single pixel during each cycle
+    # If the sprite is positioned such that one of its three pixels is the pixel
+    # currently being drawn, the screen produces a lit pixel (#);
+    # otherwise, the screen leaves the pixel dark (.).
+    crt = ""
+    for cycle, x in enumerate(cycle_x):
+        crt_pos = cycle % 40  # one crt row: 0-39
+        crt += "#" if crt_pos in (x - 1, x, x + 1) else "."
+
+    print(f"Solution 2 ... [red on grey3]read the screen[/red on grey3]")
+    draw_crt(crt)
 
 
 def main(test):
@@ -62,9 +68,9 @@ def main(test):
     ) as input:
         lines = input.read().rstrip().split("\n")
 
-    # PART 1
-    solve1(lines)
+    # PART 1 and 2
+    solve(lines)
 
 
 main(test=True)  # 13140,
-main(test=False)  #
+main(test=False)  # 14920, BUCACBUZ
