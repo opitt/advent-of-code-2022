@@ -2,59 +2,81 @@ from math import inf
 from rich import print
 import os
 
-def solve1(S,E,nodes):
-    dist = {S:0}
-    visited=[]
-    pre={}
 
-    dist={(y,x):inf for x in range(len(nodes[0])) for y in range(len(nodes))}
-    dist[(0,0)]=0
+def solve1(S, E, nodes):
+    visited = []
+    dist = {(y, x): inf for x in range(
+        len(nodes[0])) for y in range(len(nodes))}
+    dist[S] = 0
+    pre = {}
 
-    def get_neighbours(nodes, node):
-        # neighbours not visited
-        # neighbours possible to visit
+    def get_neighbours(node):
+
+        def check_cangothere(y, x, H):
+            h = ord(nodes[y][x])
+            if (h <= H or h == H+1) and (y, x) not in visited:
+                neighbours.append((y, x))
+
         neighbours = []
-        Y,X = node
+        Y, X = node
         H = ord(nodes[Y][X])
-        # up
-        y = Y-1
-        if y >= 0: #up
-            h = ord(nodes[y][X])
-            if h <= H or h==H+1:
-                if (y,X) not in visited:
-                    neighbours.append((y,X))
-        y = Y+1
-        if y < len(nodes): #down
-            h = ord(nodes[y][X])
-            if h <= H or h==H+1:
-                if (y,X) not in visited:
-                    neighbours.append((y,X))
-        x = X-1
-        if x >= 0: #left
-            h = ord(nodes[Y][x])
-            if h <= H or h==H+1:
-                if (Y,x) not in visited:
-                    neighbours.append((Y,x))
-        x = X+1
-        if x < len(nodes[0]): #dright
-            h = ord(nodes[Y][x])
-            if h <= H or h==H+1:
-                if (Y,x) not in visited:
-                    neighbours.append((Y,x))
+        for y, x in [(Y-1, X), (Y+1, X), (Y, X-1), (Y, X+1)]:
+            if 0 <= y < len(nodes) and 0 <= x < len(nodes[0]):
+                check_cangothere(y, x, H)
         return neighbours
 
-    while len(visited) < len(dist):
-        node = min([node for node in dist if node not in visited],key=lambda yx: dist[yx])
+    while dist[E] == inf:  # len(visited) < len(dist):
+        node = min([node for node in dist if node not in visited],
+                   key=lambda node: dist[node])
         visited.append(node)
-        print(len(visited),"of",len(dist))
-        if node == E:
-            break
-        for n in get_neighbours(nodes, node):
+        print(f"{node=} {dist[node]=} {len(visited)} of {len(dist)}")
+        # if node == E:
+        #    break
+        for n in get_neighbours(node):
             d = dist[node] + 1
             if d < dist[n]:
                 dist[n] = d
                 pre[n] = node
     print(f"Solution part 1 ... {dist[E]}")
+
+
+def solve2(S, nodes):
+    visited = []
+    dist = {(y, x): inf for x in range(
+        len(nodes[0])) for y in range(len(nodes))}
+    dist[S] = 0
+    pre = {}
+
+    def get_neighbours(node):
+
+        def check_cangothere(y, x, H):
+            h = ord(nodes[y][x])
+            if (h >= H or h == H-1) and (y, x) not in visited:
+                neighbours.append((y, x))
+
+        neighbours = []
+        Y, X = node
+        H = ord(nodes[Y][X])
+        for y, x in [(Y-1, X), (Y+1, X), (Y, X-1), (Y, X+1)]:
+            if 0 <= y < len(nodes) and 0 <= x < len(nodes[0]):
+                check_cangothere(y, x, H)
+        return neighbours
+
+    while len(visited) < len(dist):
+        node = min([node for node in dist if node not in visited],
+                   key=lambda node: dist[node])
+        visited.append(node)
+        Y, X = node
+        print(
+            f"{node=} {dist[node]=} {nodes[Y][X]} {len(visited)} of {len(dist)}")
+        if nodes[Y][X] == "a":
+            break
+        for n in get_neighbours(node):
+            d = dist[node] + 1
+            if d < dist[n]:
+                dist[n] = d
+                pre[n] = node
+    print(f"Solution part 2 ... {dist[node]}")
 
 
 def main(test):
@@ -67,19 +89,24 @@ def main(test):
     ) as input:
         lines = input.read().rstrip().split("\n")
 
-    for y,line in enumerate(lines):
-        if line.find("S")>=0:
-            S=(y,line.find("S"))
-            lines[y] = line.replace("S","a")
-        if line.find("E")>=0:
-            E=(y,line.find("E"))
-            lines[y] = line.replace("E","z")
+    for y in range(len(lines)):
+        if lines[y].find("S") >= 0:
+            S = (y, lines[y].find("S"))
+            lines[y] = lines[y].replace("S", "a")
+        if lines[y].find("E") >= 0:
+            E = (y, lines[y].find("E"))
+            lines[y] = lines[y].replace("E", "z")
 
     # PART 1
-    solve1(S,E,lines)
+    # search from start to end
+    # jumping down, climbin up 1
+    solve1(S, E, lines)
 
     # PART 2
+    # search from end to the first "a"
+    # climbing up any, jumping down 1
+    solve2(E, lines)
 
 
-main(test=True)  # 
-main(test=False)  #
+main(test=True)  # 30, 29
+main(test=False)  # 380, 375
