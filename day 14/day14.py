@@ -1,4 +1,6 @@
+# https://adventofcode.com/2022/day/14
 import os
+from time import time
 from rich import print
 import itertools as it
 
@@ -9,9 +11,9 @@ def print_cave(cave):
         row = ""
         for x in range(min(cave), max(cave)+1):
             if y not in cave.get(x, []):
-                row += "."
+                row += "[blue on blue] [/blue on blue]"
             else:
-                row += "#"
+                row += "[yellow on yellow] [/yellow on yellow]"
         print(f"{y:>2}{row}")
     print("")
 
@@ -85,17 +87,21 @@ def main(test):
     cave = parse_scan(lines)
     print("### Part 1 - scan      ###")
     print_cave(cave)
+    start = time()
     solve1(cave)
+    print(time() - start, " seconds")
     print("### Part 1 - sand fill ###")
     print_cave(cave)
 
     # PART 2
     cave = parse_scan2(lines)
-    #print("### Part 2 - scan      ###")
-    #print_cave(cave)
+    # print("### Part 2 - scan      ###")
+    # print_cave(cave)
+    start = time()
     solve1(cave)
-    #print("### Part 2 - sand fill ###")
-    #print_cave(cave)
+    print(time() - start, " seconds")
+    # print("### Part 2 - sand fill ###")
+    print_cave(cave)
 
 
 main(test=True)  # 24, 93
