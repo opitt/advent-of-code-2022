@@ -15,20 +15,17 @@ def solve(lines, testline):
         if sy-s_range <= testline <= sy+s_range:
             # the sensor covers the interesting row
             # get the min x and the max x, which depends on the y of the sensor and the sensor range
-            s_coverage_testline = (sx-(s_range-(abs(testline-sy))),
-                                   sx+(s_range-(abs(testline-sy))))
-            coverage.append(s_coverage_testline)
+            coverage.append((sx-(s_range-(abs(testline-sy))),
+                             sx+(s_range-(abs(testline-sy)))))
             if by == testline: # there might be a beacon in the row already (test case)
                 beacons.add(bx)
         pass
     #coverage.sort()
     max_x = max(coverage, key=lambda x: x[1])[1]
     min_x = min(coverage, key=lambda x: x[0])[0]
-    print("Solution 1 is", max_x - min_x + 1 - len(beacons))
-
+    print("Solution 1 is", max_x - min_x + 1 - len(beacons)) # +1 to count inclusive e.g. 5-10 has 6 elements 5,6,7,8,9,10
 
 def main(test):
-
     print("****", "TEST" if test else "INPUT", "****************")
     # READ INPUT FILE
     script_path = os.path.dirname(os.path.realpath(__file__))
