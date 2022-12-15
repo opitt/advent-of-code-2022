@@ -37,12 +37,8 @@ def main(test):
     ) as input:
         lines = input.read().rstrip().split("\n")
 
-    if test:
-        testline = 10
-    else:
-        testline = 2000000
-
     # PART 1
+    testline = 10 if test else 2000000
     start = time()
     solve(lines, testline)
     print(time() - start, " seconds")
