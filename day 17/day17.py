@@ -11,8 +11,8 @@ def start_falling(tile):
 
     chamber = list(it.dropwhile(lambda r: r == AIR_ROW, chamber))
     # add air rows to cover the current tile starting to fall
-    air = [AIR_ROW]*(3+tile[1])
-    chamber = [*air, *chamber]
+    for _ in range(3+tile[1]):
+        chamber.insert(0,AIR_ROW)
     tile_pos = TILE_START_INDEX
     tile_row = tile[1]-1  # the row, that the lowest tile part covers
 
