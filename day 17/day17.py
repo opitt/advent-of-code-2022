@@ -3,13 +3,14 @@ import itertools as it
 from time import time
 from rich import print
 
+
 class Tetris():
     # tile patterns, with hight and width
     TILES = [(["####"], 1, 4),
-         ([" # ", "###", " # "], 3, 3),
-         (["  #", "  #", "###"], 3, 3),
-         (["#", "#", "#", "#"], 4, 1),
-         (["##", "##"], 2, 2)]
+             ([" # ", "###", " # "], 3, 3),
+             (["  #", "  #", "###"], 3, 3),
+             (["#", "#", "#", "#"], 4, 1),
+             (["##", "##"], 2, 2, 1)]
     TILE_START_INDEX = 2  # 2 empty positions from left
     AIR_ROW = "       "
 
@@ -19,7 +20,6 @@ class Tetris():
         self.tile_row = None
         self.streams = streams
         self.rounds = rounds
-
 
     def solve1(self):
         self.chamber = []
@@ -35,18 +35,18 @@ class Tetris():
                 if still_falling:
                     self.push_tile(next(jets), tile)
 
-        self.chamber = list(it.dropwhile(lambda r: r == self.AIR_ROW, self.chamber))
+        self.chamber = list(it.dropwhile(
+            lambda r: r == self.AIR_ROW, self.chamber))
         print("Solution 1 ... ", len(self.chamber))
 
-
     def start_falling(self, tile):
-        self.chamber = list(it.dropwhile(lambda r: r == self.AIR_ROW, self.chamber))
+        self.chamber = list(it.dropwhile(
+            lambda r: r == self.AIR_ROW, self.chamber))
         # add air rows to cover the current tile starting to fall
         for _ in range(3+tile[1]):
-            self.chamber.insert(0,self.AIR_ROW)
+            self.chamber.insert(0, self.AIR_ROW)
         self.tile_pos = self.TILE_START_INDEX
         self.tile_row = tile[1]-1  # the row, that the lowest tile part covers
-
 
     def push_tile(self, direction, tile):
         if direction == ">":
@@ -55,7 +55,6 @@ class Tetris():
         elif direction == "<":
             if self.tile_pos-1 >= 0 and self.fits_in_row(tile, self.tile_row, self.tile_pos-1):
                 self.tile_pos -= 1
-
 
     def fits_in_row(self, tile, to_row, to_pos):
         # .@.....
@@ -72,7 +71,6 @@ class Tetris():
                 lambda z: z[0] == " " or z[1] == " " or z[1] == " " and z[0] == "#", zip(p, self.chamber[to_row-t])))
         return fits
 
-
     def falling(self, tile):
         fits = self.fits_in_row(tile, self.tile_row, self.tile_pos)
         if fits and (self.tile_row+1) < len(self.chamber) and self.fits_in_row(tile, self.tile_row+1, self.tile_pos):
@@ -82,7 +80,6 @@ class Tetris():
         self.landing(tile)
         return False  # not falling anymore
 
-
     def landing(self, tile):
         for part in tile[0][::-1]:
             p = " "*self.tile_pos + part + " "*(7-self.tile_pos-len(part))
@@ -91,7 +88,7 @@ class Tetris():
                     [p[i] if b == " " else b for i, b in enumerate(self.chamber[self.tile_row])])
                 self.tile_row -= 1
             else:
-                self.chamber.insert(0,p)
+                self.chamber.insert(0, p)
 
 
 def main(test):
