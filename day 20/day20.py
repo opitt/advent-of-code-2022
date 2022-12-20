@@ -5,47 +5,31 @@ from time import time
 from rich import print
 
 
-def solve1(numbers, zero):
+def solve(nums, decryption_key, mixit):
     # number = [(index, number), ...]
-    result = deepcopy(numbers)
-    for number in numbers:
-        i = result.index(number)
-        result.pop(i)
-        move_to = (i + number[1]) % len(result)
-        if move_to == 0:
-            result.append(number)
-        else:
-            result.insert(move_to, number)
-        #temp = [res[1] for res in result]
+    zero = (nums.index(0), 0) # store the index of 0 in the org list
+    # store the index for each number in the org list
+    numbers = [(i, int(n)*decryption_key) for i, n in enumerate(nums)]
+    decoded = deepcopy(numbers)
 
-    i = result.index(zero)
-    res = [result[(i + pos) % len(result)][1] for pos in (1000, 2000, 3000)]
-    print("")
-    print("Solution 1 ...:")
-    print("  Grove coords: ", *res)
-    print("  sum of coords:", sum(res))
-
-
-def solve2(numbers, zero):
-    # number = [(index, number), ...]
-    result = deepcopy(numbers)
-    for mix in range(10):
-        for number in numbers:
-            i = result.index(number)
-            result.pop(i)
-            move_to = (i + number[1]) % len(result)
+    for _ in range(mixit):
+        for n in numbers:
+            i = decoded.index(n)
+            decoded.pop(i)
+            move_to = (i + n[1]) % len(decoded)
             if move_to == 0:
-                result.append(number)
+                decoded.append(n)
             else:
-                result.insert(move_to, number)
-            #temp = [res[1] for res in result]
+                decoded.insert(move_to, n)
 
-    i = result.index(zero)
-    res = [result[(i + pos) % len(result)][1] for pos in (1000, 2000, 3000)]
+    i = decoded.index(zero)
+    grove = [decoded[(i + pos) % len(decoded)][1] for pos in (1000, 2000, 3000)]
+    res = sum(grove)
+    
     print("")
     print("Solution 2 ...:")
-    print("  Grove coords: ", *res)
-    print("  sum of coords:", sum(res))
+    print("  Grove coords: ", *grove)
+    print("  sum of coords:", res)
 
 
 def main(test):
@@ -58,18 +42,16 @@ def main(test):
     with open(os.path.join(script_path, filename), encoding="utf-8") as input:
         lines = input.read().strip().split("\n")
 
-    zero = (lines.index("0"), 0)
+    nums = list(map(int, lines))
 
     # PART 1
     start = time()
-    numbers = [(i, int(n)) for i, n in enumerate(lines)]
-    solve1(numbers, zero)
+    solve(nums, 1, 1)
     print(f"{time() - start:5f} seconds")
 
     # PART 2
     start = time()
-    numbers = [(i, int(n)*811589153) for i, n in enumerate(lines)]
-    solve2(numbers, zero)
+    solve(nums, 811589153, 10)
     print(f"{time() - start:5f} seconds")
 
 
