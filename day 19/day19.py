@@ -55,6 +55,9 @@ def simulate(minute, bot_costs, bots, minerals, memo={}):
     if minute == 24:
         return minerals[GEO]
 
+    if minute == 23 and bots[GEO]==0:
+        return 0
+
     geo_max = 0
     for opp_bots, opp_minerals in find_opportunities(bot_costs, bots, minerals):
         geo_sim = simulate(minute+1, bot_costs, opp_bots, opp_minerals, memo)
