@@ -15,6 +15,25 @@ def solve(m, m_ref):
                     m[mref] = m[mref].replace(mname, str(int(n)))
                     if re.fullmatch("\([-]?\d+ [+/*-] [-]?\d+\)", m[mref]):
                         m[mref] = eval(m[mref])
+            m_ref.pop(mname)
+
+    print("")
+    print("Solution 1 ...:", m["root"])
+
+
+def solve2(m, m_ref):
+    m["root"] = m["root"].replace("+", "==")
+    m["humn"] = "x"
+
+    while len(m_ref) > 2:  # type(m["root"]) != int:
+        for mname, n in m.items():
+            if type(n) == int or re.fullmatch("\((x|[-]?\d+) [+/*-=]=? (x|[-]?\d+)\)", n):
+                # replace
+                for mref in m_ref[mname]:
+                    m[mref] = m[mref].replace(mname, str(int(n)) if type(n) == int else n)
+                    if re.fullmatch("\([-]?\d+ [+/*-] [-]?\d+\)",m[mref]):
+                        m[mref] = eval(m[mref])
+                m_ref.pop(mname)
 
     print("")
     print("Solution 1 ...:", m["root"])
@@ -52,6 +71,7 @@ def main(test):
 
     # PART 2
     start = time()
+    solve2(deepcopy(m), deepcopy(m_ref))
     print(f"{time() - start:5f} seconds")
 
 
