@@ -8,35 +8,40 @@ from rich import print
 
 
 def solve(m, m_ref):
-    while type(m["root"]) != int:
-        for mname, n in [(mname, n) for mname, n in m.items() if type(n) in (int, float)]:
-            for mref in m_ref[mname]:
-                if type(m[mref]) == str:
-                    m[mref] = m[mref].replace(mname, str(int(n)))
-                    if re.fullmatch("\([-]?\d+ [+/*-] [-]?\d+\)", m[mref]):
-                        m[mref] = eval(m[mref])
-            m_ref.pop(mname)
-
-    print("")
-    print("Solution 1 ...:", m["root"])
-
-
-def solve2(m, m_ref):
-    m["root"] = m["root"].replace("+", "==")
-    m["humn"] = "x"
-
-    while len(m_ref) > 2:  # type(m["root"]) != int:
+    while len(m_ref):  # type(m["root"]) != int:
         for mname, n in m.items():
-            if type(n) == int or re.fullmatch("\((x|[-]?\d+) [+/*-=]=? (x|[-]?\d+)\)", n):
-                # replace
+            if not re.findall("[a-z]{4}", n):
                 for mref in m_ref[mname]:
-                    m[mref] = m[mref].replace(mname, str(int(n)) if type(n) == int else n)
-                    if re.fullmatch("\([-]?\d+ [+/*-] [-]?\d+\)",m[mref]):
-                        m[mref] = eval(m[mref])
+                    m[mref] = m[mref].replace(mname, n)
+                    if re.fullmatch("\([-]?\d+ [+/*-] [-]?\d+\)", m[mref]):
+                        m[mref] = str(int(eval(m[mref])))
                 m_ref.pop(mname)
 
     print("")
     print("Solution 1 ...:", m["root"])
+
+
+def solve2(m, m_used_by_monkeys):
+    m["root"] = m["root"].replace("+", "=")
+    m["humn"] = "x"
+
+    while len(m_used_by_monkeys):  # type(m["root"]) != int:
+        for mname, msays in m.items():
+            if not re.findall("[a-z]{4}", msays):
+                for musedby in m_used_by_monkeys[mname]:
+                    m[musedby] = m[musedby].replace(mname, msays)
+                    if re.fullmatch("\([-]?\d+ [+/*-] [-]?\d+\)", m[musedby]):
+                        m[musedby] = str(int(eval(m[musedby])))
+                m_used_by_monkeys.pop(mname)
+
+    print("")
+    print(
+        "Solution 2 ...: enter the equation ",
+        m["root"],
+        "in the equation solver ...",
+        sep="\n",
+    )
+    # https://quickmath.com/webMathematica3/quickmath/equations/solve/basic.jsp
 
 
 def main(test):
@@ -58,7 +63,7 @@ def main(test):
         mname, *mops = monkey
         mname = mname[:-1]  # remove :
         if len(mops) == 1:
-            m[mname] = int(mops[0])
+            m[mname] = mops[0]
         else:
             m[mname] = f"({mops[0]} {mops[1]} {mops[2]})"
             m_ref[mops[0]].append(mname)
@@ -75,5 +80,5 @@ def main(test):
     print(f"{time() - start:5f} seconds")
 
 
-main(test=True)  #
-main(test=False)  #
+main(test=True)  # 152, 301
+main(test=False)  # 194058098264286, 3592056845086
