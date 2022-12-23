@@ -1,6 +1,6 @@
 # https://adventofcode.com/2022/day/22
-from collections import defaultdict
 from copy import deepcopy
+from curses.ascii import isdigit
 import os
 import re
 from time import time
@@ -8,56 +8,73 @@ from rich import print
 
 
 def solve(board, cmds):
-    DIRS = "rdlu"
-    dir = 0
 
-    def turn(dir_idx, c):
-        dir_idx = dir_idx - 1 if c == "L" else dir_idx + 1
-        dir_idx = 3 if dir_idx < 0 else dir_idx % 4
-        return dir_idx
+    def turn(facing, c):
+        facing = facing - 1 if c == "L" else facing + 1
+        facing = 3 if facing < 0 else facing % 4
+        return facing
 
-    def step(idx, d, idxmax):
-        idx = idx + d
-        idx = idxmax if idx < 0 else idx % (idxmax + 1)
-        return idx
+    def wraparound_x(y, x, xd):
+        xnew = x
+        while board[y][xnew] != " ":
+            xnew += (-1*xd)
+        return xnew+xd
 
-    def wraparound(x, xnew, y, ynew):
-        ...
+    def wraparound_y(x, y, yd):
+        ynew = y
+        while board[ynew][x] != " ":
+            ynew += (-1*yd)
+        return ynew+yd
 
     def move(y, x, d, steps):
         DIFFS = {0: (0, 1), 1: (1, 0), 2: (0, -1), 3: (-1, 0)}
         yd, xd = DIFFS[d]
-        ymax, xmax = len(board) - 1, len(board[0]) - 1
         for _ in range(steps):
-            ynew, xnew = step(y, yd, ymax), step(x, xd, xmax)
+            ynew = y+yd
+            xnew = x+xd
             tile = board[ynew][xnew]
             if tile == ".":
                 y, x = ynew, xnew
             elif tile == " ":
-                # wrap around to the other side of the board
-                ynew, xnew = wraparound(x, xnew, y, ynew)
+                # try to wrap around to the other side of the board
+                if yd:
+                    ynew = wraparound_y(x, y, yd)
+                if xd:
+                    xnew = wraparound_x(y, x, xd)
                 if board[ynew][xnew] == "#":
                     # If you run into a wall, you stop moving forward
                     break
-                if board[ynew][xnew] == " ":
-                    raise ValueError
-                y, x = ynew, xnew
+                if board[ynew][xnew] == ".":
+                    y, x = ynew, xnew
             else:
                 # If you run into a wall, you stop moving forward
                 break
         return y, x
 
-    x = board[0].index(".")  #    ......#.
-    y = 0
-    for cmd in re.findall("\d+[A-Z]+", cmds):  # 10R5L5R10L4R5L5
-        c_steps = int(cmd[:-1])
-        c_turn = cmd[-1]
-        y, x = move(y, x, dir, c_steps)
-        dir = turn(dir, c_turn)
+    FACINGSYM = ">v<^"
+    facing = 0
+    y = 1
+    x = board[y].index(".")  # ......#.
+    boardpath = deepcopy(board)
+    boardpath[y] = boardpath[y][:x] + FACINGSYM[facing] + boardpath[y][x+1:]
+    for cmd in re.findall("\d+|[RL]", cmds):  # 10R5L5R10L4R5L5
+        if cmd.isdigit():
+            c_steps = int(cmd)
+            for _ in range(c_steps):
+                y, x = move(y, x, facing, 1)
+                boardpath[y] = boardpath[y][:x] + \
+                    FACINGSYM[facing] + boardpath[y][x+1:]
+        else:
+            c_turn = cmd
+            facing = turn(facing, c_turn)
+            boardpath[y] = boardpath[y][:x] + FACINGSYM[facing] + boardpath[y][x+1:]
 
-    res = (y + 1) * 1000 + (x + 1) * 4
+    boardpath[y] = boardpath[y][:x] + f"[red]{facing}[/red]" + boardpath[y][x+1:]
+    print(*boardpath, sep="\n")
+
+    res = (y) * 1000 + (x) * 4 + facing
     print("")
-    print("Solution 1 ...:", m["root"])
+    print("Solution 1 ...:", res)
 
 
 def solve2():
@@ -81,7 +98,9 @@ def main(test):
 
     board = lines[0].split("\n")
     width = max(len(line) for line in board)
-    board = [line.ljust(width, " ") for line in board]
+    board = [f" {line.ljust(width, ' ')} " for line in board]
+    board.append(" "*(width+2))
+    board.insert(0, " "*(width+2))
     cmds = lines[1]
 
     # PART 1
@@ -92,5 +111,5 @@ def main(test):
     # PART 2
 
 
-main(test=True)  #
-# main(test=False)  #
+main(test=True)  # 6032,
+main(test=False)  # 131052,
