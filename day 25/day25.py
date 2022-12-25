@@ -3,12 +3,14 @@ import os
 from time import time
 from rich import print
 
-
 def solve(fuel):
     fuel_dec = [snafu2dec(snafu) for snafu in fuel]
     fuel_needed = sum(fuel_dec)
     print(f"Fuel needed: {fuel_needed}")
     print(f"Solution 1 ... : {base52snafu(dec2base5(fuel_needed))}")
+    #
+    print(
+        f"[green on black]Looking forward to a happy new AoC {base52snafu(dec2base5(2023))}[green on black]")
 
 
 def snafu2dec(s):
