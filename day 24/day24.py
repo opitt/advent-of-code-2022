@@ -1,5 +1,5 @@
 # https://adventofcode.com/2022/day/24
-from collections import defaultdict, deque
+from collections import deque
 from copy import deepcopy
 import os
 from time import time, sleep
@@ -31,13 +31,18 @@ def solve(left, right, up, down, startx, destx):
         right = [[line[-1], *line[:-1]] for line in right]
         return left, right, up, down
 
-    def generate_table(blizzmap) -> Table:
+    def visualise(blizzmap, q, minutes) -> Table:
         table = Table()
-        table.add_column("Blizzard", justify="center")
-        for line in blizzmap:
+        table.add_column(f"Map after {minutes} minutes", justify="center")
+        bm = deepcopy(blizzmap)
+        for y, x in q:
+            bm[y][x] = "@"
+        for line in bm:
             l = "".join(line)
             l = l.replace(
-                ".", "[bright_white on white].[/bright_white on white]")
+                "@", "[bright_white on red]@[/bright_white on red]")
+            l = l.replace(
+                ".", "[bright_white on white] [/bright_white on white]")
             l = l.replace(
                 ">", "[bright_white on deep_sky_blue2]>[/bright_white on deep_sky_blue2]")
             l = l.replace(
@@ -66,50 +71,36 @@ def solve(left, right, up, down, startx, destx):
 
     q = deque()
     q.append((0, startx))
-    while q:
-        for _ in range(len(q)):
-            # check all elfs, where they can move. If they can't move anymore, they die ... :(
-            elfy, elfx = q.popleft()
-            moves = set([(max(0, elfy-1), elfx), (min(maxy, elfy+1), elfx),  # y+/- down/up
-                         (elfy, max(0, elfx-1)), (elfy,
-                                                  min(maxx, elfx+1)),  # x+/- right/left
-                         (elfy, elfx)])  # wait
 
-            actions = [(y, x) for y, x in moves if blizzmap[y]
-                       [x] == "." and (y, x) not in q]
-            if (maxy, destx) in actions:
-                q.clear()
-                print("Destination reached after (mins): ", minutes+1)
-                break
-            else:
-                q.extend(actions)
-        minutes += 1
-        print(minutes)
-        left, right, up, down = moveblizz(left, right, up, down)
-        blizzmap = mergeblizz(left, right, up, down)
+    with Live(visualise(blizzmap, q, minutes), refresh_per_second=4) as live:
+        while q:
+            if VIS:
+                sleep(0.1)
+                live.update(visualise(blizzmap, q, minutes))
 
-    return
-    with Live(generate_table(blizzmap), refresh_per_second=1) as live:
-        for _ in range(100):
-            sleep(1)
-            # print_blizz(blizzmap)
-            left, right, up, down = moveblizz(
-                left, right, up, down)
+            for _ in range(len(q)):
+                # check all elfs, where they can move. If they can't move anymore, they die ... :(
+                elfy, elfx = q.popleft()
+                moves = set([(max(0, elfy-1), elfx), (min(maxy, elfy+1), elfx),  # y+/- down/up
+                            (elfy, max(0, elfx-1)), (elfy,
+                                                     min(maxx, elfx+1)),  # x+/- right/left
+                            (elfy, elfx)])  # wait
+
+                actions = [(y, x) for y, x in moves if blizzmap[y]
+                           [x] == "." and (y, x) not in q]
+                if (maxy, destx) in actions:
+                    q.clear()
+                    break
+                else:
+                    q.extend(actions)
+            minutes += 1
+            left, right, up, down = moveblizz(left, right, up, down)
             blizzmap = mergeblizz(left, right, up, down)
-            live.update(generate_table(blizzmap))
+        live.update(visualise(blizzmap, [(maxy, destx)], minutes))
+    print("Map shows the position of the elf ABOVE the exit.")
+    print("Destination reached after (mins): ", minutes)
 
-
-def main(test):
-
-    print("")
-    print("****", "TEST" if test else "INPUT", "****************")
-    # READ INPUT FILE
-    script_path = os.path.dirname(os.path.realpath(__file__))
-    filename = "test.txt" if test else "input.txt"
-    with open(os.path.join(script_path, filename), encoding="utf-8") as input:
-        lines = input.read().rstrip().split("\n")
-
-    # DIR = {"<":(0, -1), ">":(0, +1), "v":(+1, 0), "^":(-1,0), "#":(0,0)}
+def parse_blizzards(lines):
     left = []
     right = []
     up = []
@@ -148,7 +139,23 @@ def main(test):
                 right[y].append(b)
                 up[y].append(b)
                 down[y].append(b)
+    return left, right, up, down
 
+
+VIS = False
+
+
+def main(test):
+
+    print("")
+    print("****", "TEST" if test else "INPUT", "****************")
+    # READ INPUT FILE
+    script_path = os.path.dirname(os.path.realpath(__file__))
+    filename = "test.txt" if test else "input.txt"
+    with open(os.path.join(script_path, filename), encoding="utf-8") as input:
+        lines = input.read().rstrip().split("\n")
+
+    left, right, up, down = parse_blizzards((lines))
     startx = lines[0][1:-1].index(".")
     destx = lines[-1][1:-1].index(".")
 
@@ -158,5 +165,5 @@ def main(test):
     print(f"{time() - start:5f} seconds")
 
 
-#main(test=True)  #
+# main(test=True)  #
 main(test=False)  #
