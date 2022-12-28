@@ -29,10 +29,10 @@ class Blizzard():
         self.__merge()
 
     def __parse_blizzards(self, lines):
-        # reads the initial map; 
+        # reads the initial map;
         # finds and stores the entrance / exit of the map as well as the max width and height (x,y)
-        # snowflakes: ^<>v 
-        # walls: # 
+        # snowflakes: ^<>v
+        # walls: #
         # empty fields: .
         self.wall = []
         self.left = []
@@ -180,7 +180,7 @@ def main(test):
     with open(os.path.join(script_path, filename), encoding="utf-8") as input:
         lines = input.read().rstrip().split("\n")
 
-    blizz = Blizzard(lines, store_history=True)
+    blizz = Blizzard(lines, store_history=True, print_after_nextmap=True)
     # is the last line of the maze, but actually it is the next line (border)
 
     # PART 1
