@@ -2,228 +2,208 @@
 from collections import deque
 from copy import deepcopy
 import os
-from time import time, sleep
+from time import time
 from rich import print
-from rich.table import Table
-from rich.live import Live
-import re
+
+from rich.console import Console
+console = Console()
 
 
 class Blizzard():
 
-    def __init__(self, lines, history=False):
+    def __init__(self, lines, store_history=False, print_after_nextmap=False):
+        self.wall = []
         self.left = []
         self.right = []
         self.up = []
         self.down = []
         self.blizzmap = []
         self.EMPTY = "."
-        self.minutes = 0
+        self.store_history = store_history
+        self.print_after_nextmap = print_after_nextmap
         #
-        self.history = history
+        self.minutes = 0
+        self.visiting = deque()
         self.blizzmap_history = []
-        #self.maxx = 0
-        #self.maxy = 0
         self.__parse_blizzards(lines)
         self.__merge()
 
     def __parse_blizzards(self, lines):
+        # reads the initial map; 
+        # finds and stores the entrance / exit of the map as well as the max width and height (x,y)
+        # snowflakes: ^<>v 
+        # walls: # 
+        # empty fields: .
+        self.wall = []
         self.left = []
         self.right = []
         self.up = []
         self.down = []
-        for line in lines[1:-1]:
+        for line in lines:
+            self.wall.append([])
             self.left.append([])
             self.right.append([])
             self.up.append([])
             self.down.append([])
             y = -1  # the last line added
-            o = self.EMPTY
-            for b in line[1:-1]:
+            for b in line:
                 if b == "<":
+                    self.wall[y].append(self.EMPTY)
                     self.left[y].append(b)
-                    self.right[y].append(o)
-                    self.up[y].append(o)
-                    self.down[y].append(o)
+                    self.right[y].append(self.EMPTY)
+                    self.up[y].append(self.EMPTY)
+                    self.down[y].append(self.EMPTY)
                 elif b == ">":
-                    self.left[y].append(o)
+                    self.wall[y].append(self.EMPTY)
+                    self.left[y].append(self.EMPTY)
                     self.right[y].append(b)
-                    self.up[y].append(o)
-                    self.down[y].append(o)
+                    self.up[y].append(self.EMPTY)
+                    self.down[y].append(self.EMPTY)
                 elif b == "^":
-                    self.left[y].append(o)
-                    self.right[y].append(o)
+                    self.wall[y].append(self.EMPTY)
+                    self.left[y].append(self.EMPTY)
+                    self.right[y].append(self.EMPTY)
                     self.up[y].append(b)
-                    self.down[y].append(o)
+                    self.down[y].append(self.EMPTY)
                 elif b == "v":
-                    self.left[y].append(o)
-                    self.right[y].append(o)
-                    self.up[y].append(o)
+                    self.wall[y].append(self.EMPTY)
+                    self.left[y].append(self.EMPTY)
+                    self.right[y].append(self.EMPTY)
+                    self.up[y].append(self.EMPTY)
                     self.down[y].append(b)
+                elif b == "#":
+                    self.wall[y].append(b)
+                    self.left[y].append(self.EMPTY)
+                    self.right[y].append(self.EMPTY)
+                    self.up[y].append(self.EMPTY)
+                    self.down[y].append(self.EMPTY)
                 else:
                     self.left[y].append(b)
                     self.right[y].append(b)
                     self.up[y].append(b)
                     self.down[y].append(b)
+                    self.wall[y].append(b)
         #
-        self.maxx = len(self.left[0])-1
-        self.maxy = len(self.left)-1
-        self.s = (0, lines[0][1:-1].index("."))
-        self.d = (len(lines)-3, lines[-1][1:-1].index("."))
+        self.maxx = len(self.wall[0])-1
+        self.maxy = len(self.wall)-1
+        self.IN = (0, self.wall[0].index("."))
+        self.OUT = (self.maxy, self.wall[-1].index("."))
 
     def __merge(self):
-        if self.history and len(self.blizzmap):
+        # merge the snowflakes into one blizzard map
+        # if more than one thing is on a position, the number of things is shown
+        #
+        # the merge allows to save prev maps in a history
+        if self.store_history and len(self.blizzmap):
             self.blizzmap_history.append(
                 "\n".join("".join(line) for line in self.blizzmap))
+        #
         self.blizzmap = []
-        for y in range(len(self.left)):
+        for y in range(len(self.wall)):
             self.blizzmap.append([])
-            for x in range(len(self.left[0])):
-                l, r, u, d = self.left[y][x], self.right[y][x], self.up[y][x], self.down[y][x]
-                samefield = set([l, r, u, d]) - set(self.EMPTY)
+            for x in range(len(self.wall[0])):
+                w, l, r, u, d = self.wall[y][x], self.left[y][x], self.right[y][x], self.up[y][x], self.down[y][x]
+                samefield = set([w, l, r, u, d]) - set(self.EMPTY)
                 if len(samefield) == 0:
                     v = self.EMPTY
                 elif len(samefield) == 1:
                     v = list(samefield)[0]
                 else:
                     v = str(len(samefield))
-                # overlay the blizzard, just for visuality
-                #v = u
-                #v = v if d == self.EMPTY else d
-                #v = v if l == self.EMPTY else l
-                #v = v if r == self.EMPTY else r
-
                 self.blizzmap[y].append(v)
 
     def __move(self):
-        self.down = [self.down[-1], *self.down[:-1]]
-        self.up = [*self.up[1:], self.up[0]]
-        self.left = [[*line[1:], line[0]] for line in self.left]
-        self.right = [[line[-1], *line[:-1]] for line in self.right]
+        # move the snowflakes 1 step in their direction (wrap around) - inside the walls
+        self.down = [self.down[0], self.down[-2],
+                     *self.down[1:-2], self.down[-1]]
+        self.up = [self.up[0], *self.up[2:-1], self.up[1], self.up[-1]]
+        self.left = [[line[0], *line[2:-1], line[1], line[-1]]
+                     for line in self.left]
+        self.right = [[line[0], line[-2], *line[1:-2], line[-1]]
+                      for line in self.right]
 
-    def print(self, visiting=[]):
-        print(f"*** Minute {self.minutes}")
-        if len(visiting
-               ):
-            temp = deepcopy(self.blizzmap)
-            for y, x in visiting:
-                temp[y][x] = "E"
-            print("\n".join("".join(line) for line in temp))
-        else:
-            print("\n".join("".join(line) for line in self.blizzmap))
-        print(f"")
+    def print(self):
+        if self.print_after_nextmap:
+            print(f"*** Minute {self.minutes}")
+            if len(self.visiting):
+                temp = deepcopy(self.blizzmap)
+                for y, x in self.visiting:
+                    temp[y][x] = "E"
+                print("\n".join("".join(line) for line in temp))
+            else:
+                print("\n".join("".join(line) for line in self.blizzmap))
+            print(f"")
 
-    def map_nextmin(self):
+    def __map_nextmin(self):
         self.minutes += 1
         self.__move()
         self.__merge()
 
-    def isempty(self, y, x):
+    def __isempty(self, pos):
+        y, x = pos
         return self.blizzmap[y][x] == self.EMPTY
 
-    def reachable_fields(self, y, x):
+    def __reachable_fields(self, pos):
+        y, x = pos
         fields = [(max(0, y-1), x), (min(self.maxy, y+1), x),  # y+/- down/up
                   (y, max(0, x-1)), (y, min(self.maxx, x+1)),  # x+/- right/left
                   (y, x)]  # wait
         return set(fields)
 
-
-def solve(blizz, first, last):
-
-    def visualise(blizz, visiting) -> Table:
-        table = Table()
-        table.add_column(
-            f"Map after {blizz.minutes} minutes", justify="center")
-        bm = deepcopy(blizz.blizzmap)
-        for y, x in visiting:
-            bm[y][x] = "@"
-        for line in bm:
-            l = "".join(line)
-            l = l.replace(
-                "@", "[bright_white on red]@[/bright_white on red]")
-            l = l.replace(
-                ".", "[white on white].[/white on white]")
-            l = l.replace(
-                ">", "[bright_white on deep_sky_blue2]>[/bright_white on deep_sky_blue2]")
-            l = l.replace(
-                "^", "[bright_white on bright_green]^[/bright_white on bright_green]")
-            l = l.replace(
-                "<", "[bright_white on deep_sky_blue2]<[/bright_white on deep_sky_blue2]")
-            l = l.replace(
-                "v", "[bright_white on bright_green]v[/bright_white on bright_green]")
-            table.add_row(f"{l}")
-        return table
-
-    visiting = deque()
-    # no field visiting yet. Elf is sitting on the edge, waiting that they can can step to the FIRST field on map
-    while True:
-        blizz.map_nextmin()
-        blizz.print(visiting)
-        if blizz.isempty(*first):  # can elf visit the first in that minute
-            # step into the field
-            visiting.append(first)
-            break
-
-    while visiting and last not in visiting:
-        # next round
-        blizz.map_nextmin()
-        # try to move the elfs
-        elfs = len(visiting)
-        for _ in range(elfs):
-            # check all elfs currently visiting fields
-            #   if they can move during this new minutet. If they can't move anymore, they die ... :(
-            fields = blizz.reachable_fields(*visiting.popleft())
-            visit_nextmin = [(y, x) for y, x in fields if blizz.isempty(
-                y, x) and (y, x) not in visiting]
-            visiting.extend(visit_nextmin)
-        blizz.print(visiting)
-    # the next minute is used to step to the target
-    if last in visiting:
-        # the elf steps in the next minute to the desition field
-        blizz.map_nextmin()
-    else:
-        raise ValueError(f"Did not reach the destination {last}")
-
-# Minute 17
-# 2.v.<>
-# <.<..<
-# .^>^22
-# .2..2E
+    def findway(self, first, last):
+        self.visiting.clear()
+        self.visiting.append(first)
+        self.print()
+        while last not in self.visiting:
+            # next round
+            self.__map_nextmin()
+            # try to move the elfs
+            elfs = len(self.visiting)
+            for _ in range(elfs):
+                # check all elfs currently visiting fields
+                #   if they can move during this new minutet. If they can't move anymore, they die ... :(
+                pos = self.visiting.popleft()
+                fields = self.__reachable_fields(pos)
+                visit_nextmin = [(y, x) for y, x in fields if self.__isempty(
+                    (y, x)) and (y, x) not in self.visiting]
+                self.visiting.extend(visit_nextmin)
+            self.print()
 
 
 def main(test):
-
-    print("")
-    print("****", "TEST" if test else "INPUT", "****************")
+    # console.log(console.color_system)
+    console.print("\n****", "TEST" if test else "INPUT",
+                  "****************", style="bold black on #F0F0F0")
     # READ INPUT FILE
     script_path = os.path.dirname(os.path.realpath(__file__))
     filename = "test.txt" if test else "input.txt"
     with open(os.path.join(script_path, filename), encoding="utf-8") as input:
         lines = input.read().rstrip().split("\n")
 
-    blizz = Blizzard(lines, history=True)
+    blizz = Blizzard(lines, store_history=True)
     # is the last line of the maze, but actually it is the next line (border)
 
     # PART 1
+    console.rule("PART 1")
     start = time()
 
-    blizz.print()
-    solve(blizz, blizz.s, blizz.d)
-    print("Solution 1 to START->DEST:", blizz.minutes)
-    blizz.print()
+    print(f"Solve START->DEST ... {blizz.IN} -> {blizz.OUT}")
+    blizz.findway(blizz.IN, blizz.OUT)
+    console.print(
+        f"Solution 1 ...: {blizz.minutes} minutes", style="green on #F0F0F0")
 
     # PART 2
-    print("Solve start->DEST->START ...", blizz.minutes)
-    solve(blizz, blizz.d, blizz.s)
-    print("Solution 2-1:")
-    blizz.print()
-    print("Solve start->dest->START->DEST ...", blizz.minutes)
-    solve(blizz, blizz.s, blizz.d)
-    blizz.print()
-    print("Solution 2-2::")
+    console.rule("PART 2")
+    print(
+        f"Solve DEST->START ... {blizz.OUT} -> {blizz.IN}")
+    blizz.findway(blizz.OUT, blizz.IN)
+    print(f"Solve START->DEST ... {blizz.IN} -> {blizz.OUT}")
+    blizz.findway(blizz.IN, blizz.OUT)
+    console.print(
+        f"Solution 2 ...: {blizz.minutes} minutes", style="green on #F0F0F0")
 
-    print(f"{time() - start:5f} seconds")
+    console.rule(f"Elapsed time {time() - start:5f} seconds")
 
 
-main(test=True)  #
-# main(test=False)  #
+main(test=True)  # 18, 54
+main(test=False)  # 311, 869
